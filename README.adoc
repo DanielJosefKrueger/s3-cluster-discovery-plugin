@@ -1,0 +1,3 @@
+== HiveMQ S3 Cluster Discovery Plugin
+
+This plugin allows your HiveMQ cluster nodes to discover each other by using S3 from Amazon Web Services.
