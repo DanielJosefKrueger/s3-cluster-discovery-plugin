@@ -155,7 +155,6 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
     private ClusterNodeAddress parseFileContent(final String fileContent, final String key) {
 
         if (fileContent == null) {
-            log.debug("Not able to parse contents from S3-object '{}'", key);
             return null;
         }
 
