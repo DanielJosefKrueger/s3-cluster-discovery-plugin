@@ -1,5 +1,6 @@
 package com.hivemq.plugin.callbacks;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.amazonaws.util.StringInputStream;
@@ -116,29 +117,25 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
     private void readAllFiles(final List<ClusterNodeAddress> addresses, final ObjectListing objectListing) {
         for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
             try {
-
                 final String key = objectSummary.getKey();
                 final S3Object object;
                 try {
                     object = s3.getObject(bucketName, key);
-                } catch (AmazonS3Exception e) {
+                } catch(AmazonServiceException e){
                     log.debug("Not able to read file {} from S3: {}", key, e.getMessage());
                     continue;
                 }
 
-                final S3ObjectInputStream objectContent = object.getObjectContent();
+                try(final S3ObjectInputStream objectContent = object.getObjectContent();
+                    final BufferedReader in = new BufferedReader(new InputStreamReader(objectContent))){
 
-                final String fileContent = new BufferedReader(new InputStreamReader(objectContent)).readLine();
-
-                final ClusterNodeAddress address = parseFileContent(fileContent, key);
-                if (address != null) {
-                    addresses.add(address);
-                }
-
-                try {
-                    objectContent.close();
+                    final String fileContent = in.readLine();
+                    final ClusterNodeAddress address = parseFileContent(fileContent, key);
+                    if (address != null) {
+                        addresses.add(address);
+                    }
                 } catch (IOException e) {
-                    log.trace("Not able to close S3 input stream", e);
+                    log.error("Unable to access AWS or parse files");
                 }
 
                 if (objectListing.isTruncated()) {
@@ -146,8 +143,9 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
                     readAllFiles(addresses, objectListingNext);
                 }
 
-            } catch (Exception e) {
-                e.printStackTrace();
+            }catch(Exception e){
+                //clean up, if the exception wasn´t caught inside
+                log.error("Unable to access AWS and parse files due to unknown issue");
             }
         }
     }
