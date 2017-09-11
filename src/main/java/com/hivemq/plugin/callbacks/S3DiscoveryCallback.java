@@ -134,6 +134,8 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
                     if (address != null) {
                         addresses.add(address);
                     }
+
+                    //the S3ObjectInputStream is handled with ARM as it implements AutoClosable
                 } catch (IOException e) {
                     log.error("Unable to access AWS or parse files");
                 }
