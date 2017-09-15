@@ -18,13 +18,13 @@ package com.hivemq.plugin.configuration;
 
 import com.google.inject.Inject;
 import com.hivemq.spi.config.SystemInformation;
+import com.hivemq.spi.exceptions.UnrecoverableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -36,7 +36,7 @@ public class PluginReader {
 
     private static final Logger log = LoggerFactory.getLogger(PluginReader.class);
 
-    final Properties properties = new Properties();
+    private final Properties properties = new Properties();
     private final SystemInformation systemInformation;
 
     @Inject
@@ -45,30 +45,26 @@ public class PluginReader {
     }
 
     @PostConstruct
-    public void postConstruct()
-    {
+    public void postConstruct() {
         final File configFolder = systemInformation.getConfigFolder();
 
         final File pluginFile = new File(configFolder, "s3discovery.properties");
 
         if (!pluginFile.canRead()) {
-            log.error("Could not read the properties file {}", pluginFile.getAbsolutePath());
-            return;
+            log.error("Critical Error: Configuration file {} for S3-discovery-plugin could not be loaded. Shitting down HiveMQ", pluginFile.getAbsolutePath());
+            throw new UnrecoverableException(false);
         }
 
         try (InputStream is = new FileInputStream(pluginFile)) {
 
             log.debug("Reading property file {}", pluginFile.getAbsolutePath());
-
             properties.load(is);
-
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("An error occurred while reading the properties file {}", pluginFile.getAbsolutePath(), e);
         }
     }
 
-    public Properties getProperties() {
+    Properties getProperties() {
         return properties;
     }
 

@@ -19,8 +19,6 @@ package com.hivemq.plugin.plugin;
 import com.hivemq.plugin.callbacks.S3DiscoveryCallback;
 import com.hivemq.spi.PluginEntryPoint;
 import com.hivemq.spi.callback.registry.CallbackRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -32,7 +30,6 @@ import javax.inject.Inject;
  */
 public class S3DiscoveryPluginEntryPoint extends PluginEntryPoint {
 
-    Logger log = LoggerFactory.getLogger(S3DiscoveryPluginEntryPoint.class);
 
     private final S3DiscoveryCallback discoveryCallback;
 

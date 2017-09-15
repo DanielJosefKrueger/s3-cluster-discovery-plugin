@@ -1,5 +1,6 @@
 package com.hivemq.plugin.callbacks;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
@@ -36,10 +37,11 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
     private final AmazonS3 s3;
     private final Configuration configuration;
     private final String bucketName;
+    private final PluginExecutorService pluginExecutorService;
+
     private String objectKey;
     private String clusterId;
     private ClusterNodeAddress ownAddress;
-    private final PluginExecutorService pluginExecutorService;
 
     @Inject
     public S3DiscoveryCallback(final AmazonS3 s3,
@@ -64,7 +66,7 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
         final long updateInterval = configuration.getOwnInformationUpdateInterval();
         if (updateInterval > 0) {
             //schedule Task to update
-            pluginExecutorService.scheduleAtFixedRate(new Runnable() {
+            pluginExecutorService.scheduleAtFixedRate(new Runnable() {//TODO warum fixed rate? fixedDelay besser?
                 @Override
                 public void run() {
                     saveOwnInformationToS3();
@@ -78,10 +80,18 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
 
         final List<ClusterNodeAddress> addresses = new ArrayList<>();
 
-        final ObjectListing objectListing = s3.listObjects(bucketName, configuration.getFilePrefix());
+        try {
+            final ObjectListing objectListing = s3.listObjects(bucketName, configuration.getFilePrefix());
+            readAllFiles(addresses, objectListing);
 
-        readAllFiles(addresses, objectListing);
+        } catch (AmazonClientException e) { //catches AmazonServiceException as well
+            log.error("Error while trying to fetch data from Amazon S3.");
+            //TODO was sollen wir machen wennn keine objectListings zurück kommen?
+            //TODO in readAllFiles wird dann ja nichts ausgeführt und es gibt keine addresses?
+        } catch (Exception e) {
+            log.error("Error while trying to fetch data from Amazon S3.", e);
 
+        }
         return Futures.immediateFuture(addresses);
     }
 
@@ -91,10 +101,13 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
             final String content = createFileContent(clusterId, ownAddress);
             final StringInputStream input;
             input = new StringInputStream(content);
+
+
             final ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(input.available());
 
             s3.putObject(bucketName, objectKey, input, metadata);
+            input.close();
             log.debug("S3 node information updated");
 
         } catch (Exception e) {
@@ -121,13 +134,13 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
                 final S3Object object;
                 try {
                     object = s3.getObject(bucketName, key);
-                } catch(AmazonServiceException e){
+                } catch (AmazonServiceException e) {
                     log.debug("Not able to read file {} from S3: {}", key, e.getMessage());
                     continue;
                 }
 
-                try(final S3ObjectInputStream objectContent = object.getObjectContent();
-                    final BufferedReader in = new BufferedReader(new InputStreamReader(objectContent))){
+                try (final S3ObjectInputStream objectContent = object.getObjectContent();
+                     final BufferedReader in = new BufferedReader(new InputStreamReader(objectContent))) {
 
                     final String fileContent = in.readLine();
                     final ClusterNodeAddress address = parseFileContent(fileContent, key);
@@ -142,12 +155,14 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
 
                 if (objectListing.isTruncated()) {
                     final ObjectListing objectListingNext = s3.listNextBatchOfObjects(objectListing);
+                    //recursive call, if the listing was truncated and there are more objectListings to handle
                     readAllFiles(addresses, objectListingNext);
+
                 }
 
-            }catch(Exception e){
-                //clean up, if the exception wasn´t caught inside
-                log.error("Unable to access AWS and parse files due to unknown issue");
+            } catch (Exception e) {
+                //clean up, if the exception wasn not caught inside
+                log.error("Unable to access AWS and parse files due to unknown issue: ", e);
             }
         }
     }
@@ -179,11 +194,13 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
 
         final long expirationMinutes = configuration.getExpirationMinutes();
 
+
+        //testing if file is expired and deleting it of this is the case
         if (expirationMinutes > 0) {
             final long expirationFromFile = Long.parseLong(split[1]);
             if (expirationFromFile + (expirationMinutes * 60000) < System.currentTimeMillis()) {
                 log.debug("S3 object {} expired, deleting it.", key);
-                s3.deleteObject(bucketName, key);
+                s3.deleteObject(bucketName, key); //TODO wirklich deleten? es könnte ein Fehler in der config eines Nodes sein bzw andere Nodes könnten längere expiration times in der config haben oder?
                 return null;
             }
         }

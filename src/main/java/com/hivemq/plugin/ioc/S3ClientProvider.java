@@ -4,8 +4,9 @@ import com.amazonaws.auth.*;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.hivemq.plugin.configuration.AuthenticationType;
 import com.hivemq.plugin.configuration.Configuration;
@@ -48,7 +49,7 @@ public class S3ClientProvider implements Provider<AmazonS3> {
             throw new UnrecoverableException();
         }
 
-        final AmazonS3 s3 = new AmazonS3Client(credentials);
+
 
         final Regions regions = configuration.getRegion();
         if (regions == null) {
@@ -56,8 +57,12 @@ public class S3ClientProvider implements Provider<AmazonS3> {
             throw new UnrecoverableException(false);
         }
 
-        final Region region = Region.getRegion(regions);
-        s3.setRegion(region);
+        final AmazonS3 s3 = AmazonS3ClientBuilder
+                .standard()
+                .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                .withRegion(regions)
+                .build();
+
 
         final String bucketName = configuration.getBucketName();
 
@@ -99,7 +104,8 @@ public class S3ClientProvider implements Provider<AmazonS3> {
                 credentials = new ProfileCredentialsProvider().getCredentials();
                 break;
             case INSTANCE_PROFILE_CREDENTIALS:
-                credentials = new InstanceProfileCredentialsProvider().getCredentials();
+                credentials = InstanceProfileCredentialsProvider.getInstance().getCredentials();
+
                 break;
             case ACCESS_KEY:
             case TEMPORARY_SESSION:

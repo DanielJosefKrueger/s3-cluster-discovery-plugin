@@ -18,6 +18,7 @@ package com.hivemq.plugin.configuration;
 
 import com.amazonaws.regions.Regions;
 import com.google.inject.Inject;
+import com.hivemq.spi.exceptions.UnrecoverableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,6 @@ import java.util.Properties;
  * @author Christian Götz
  */
 public class Configuration {
-
     private static final Logger log = LoggerFactory.getLogger(Configuration.class);
 
     private final Properties properties;
@@ -48,8 +48,8 @@ public class Configuration {
 
             return AuthenticationType.fromName(property);
         } catch (IllegalArgumentException e) {
-            log.error("Not able to initialize S3 Plugin", e);
-            return null;
+            log.error("Not able to initialize S3 Plugin. Shutting down HiveMQ.", e);
+            throw new UnrecoverableException(false);
         }
     }
 
@@ -59,17 +59,17 @@ public class Configuration {
             if (property == null) {
                 return null;
             }
-
             return Regions.fromName(property);
         } catch (IllegalArgumentException e) {
-            log.error("Not able to initialize S3 Plugin", e);
-            return null;
+            log.error("Not able to initialize S3 Plugin. Shutting down HiveMQ.", e);
+            throw new UnrecoverableException(false);
         }
     }
 
     public String getFilePrefix() {
         final String property = getProperty("file-prefix");
         if (property == null) {
+            log.info("No FilePrefix was set in the configuration. Using empty String");
             return "";
         }
         return property;

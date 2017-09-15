@@ -35,7 +35,7 @@
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bom</artifactId>
-                <version>1.10.43</version>
+                <version>1.11.195</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -46,11 +46,18 @@
         <dependency>
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-spi</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.1</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.11.195</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.aeonbits.owner/owner -->
+        <dependency>
+            <groupId>org.aeonbits.owner</groupId>
+            <artifactId>owner</artifactId>
+            <version>1.0.8</version>
         </dependency>
     </dependencies>
 
@@ -111,7 +118,9 @@
                                     <goal>hivemq</goal>
                                 </goals>
                                 <configuration>
-                                    <hiveMQDir>//YOUR-HIVEMQ-HOME-HERE</hiveMQDir>
+                                    <hiveMQDir>
+                                        /Users/dkrueger/Desktop/hivemqs/hivemq-3.2.7
+                                    </hiveMQDir>
                                     <debugMode>SERVER</debugMode>
                                 </configuration>
                             </execution>
