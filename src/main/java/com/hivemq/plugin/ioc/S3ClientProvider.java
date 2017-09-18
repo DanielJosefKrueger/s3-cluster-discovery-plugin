@@ -2,9 +2,7 @@ package com.hivemq.plugin.ioc;
 
 import com.amazonaws.auth.*;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -48,7 +46,6 @@ public class S3ClientProvider implements Provider<AmazonS3> {
             log.error("Not able to authenticate with S3, shutting down HiveMQ");
             throw new UnrecoverableException();
         }
-
 
 
         final Regions regions = configuration.getRegion();

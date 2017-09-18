@@ -53,12 +53,6 @@
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>1.11.195</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.aeonbits.owner/owner -->
-        <dependency>
-            <groupId>org.aeonbits.owner</groupId>
-            <artifactId>owner</artifactId>
-            <version>1.0.8</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -119,7 +113,7 @@
                                 </goals>
                                 <configuration>
                                     <hiveMQDir>
-                                        /Users/dkrueger/Desktop/hivemqs/hivemq-3.2.7
+                                        //YOUR-HIVEMQ-HOME-HERE
                                     </hiveMQDir>
                                     <debugMode>SERVER</debugMode>
                                 </configuration>

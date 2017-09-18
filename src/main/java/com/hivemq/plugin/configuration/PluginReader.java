@@ -51,12 +51,11 @@ public class PluginReader {
         final File pluginFile = new File(configFolder, "s3discovery.properties");
 
         if (!pluginFile.canRead()) {
-            log.error("Critical Error: Configuration file {} for S3-discovery-plugin could not be loaded. Shitting down HiveMQ", pluginFile.getAbsolutePath());
+            log.error("Critical Error: configuration file {} for S3-discovery-plugin could not be loaded. Shutting down HiveMQ", pluginFile.getAbsolutePath());
             throw new UnrecoverableException(false);
         }
 
         try (InputStream is = new FileInputStream(pluginFile)) {
-
             log.debug("Reading property file {}", pluginFile.getAbsolutePath());
             properties.load(is);
         } catch (Exception e) {

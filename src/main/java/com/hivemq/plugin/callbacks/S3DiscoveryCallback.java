@@ -127,7 +127,7 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
 
     private void readAllFiles(final List<ClusterNodeAddress> addresses, final ObjectListing objectListing) {
 
-        if(objectListing==null){
+        if (objectListing == null) {
             return;
         }
 
