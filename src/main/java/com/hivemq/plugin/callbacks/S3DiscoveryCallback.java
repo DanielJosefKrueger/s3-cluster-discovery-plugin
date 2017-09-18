@@ -66,7 +66,7 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
         final long updateInterval = configuration.getOwnInformationUpdateInterval();
         if (updateInterval > 0) {
             //schedule Task to update
-            pluginExecutorService.scheduleAtFixedRate(new Runnable() {//TODO warum fixed rate? fixedDelay besser?
+            pluginExecutorService.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     saveOwnInformationToS3();
@@ -86,8 +86,6 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
 
         } catch (AmazonClientException e) { //catches AmazonServiceException as well
             log.error("Error while trying to fetch data from Amazon S3.");
-            //TODO was sollen wir machen wennn keine objectListings zurück kommen?
-            //TODO in readAllFiles wird dann ja nichts ausgeführt und es gibt keine addresses?
         } catch (Exception e) {
             log.error("Error while trying to fetch data from Amazon S3.", e);
 
@@ -128,6 +126,11 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
 
 
     private void readAllFiles(final List<ClusterNodeAddress> addresses, final ObjectListing objectListing) {
+
+        if(objectListing==null){
+            return;
+        }
+
         for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
             try {
                 final String key = objectSummary.getKey();
@@ -200,7 +203,7 @@ public class S3DiscoveryCallback implements ClusterDiscoveryCallback {
             final long expirationFromFile = Long.parseLong(split[1]);
             if (expirationFromFile + (expirationMinutes * 60000) < System.currentTimeMillis()) {
                 log.debug("S3 object {} expired, deleting it.", key);
-                s3.deleteObject(bucketName, key); //TODO wirklich deleten? es könnte ein Fehler in der config eines Nodes sein bzw andere Nodes könnten längere expiration times in der config haben oder?
+                s3.deleteObject(bucketName, key);
                 return null;
             }
         }
